@@ -63,8 +63,8 @@ Searches the major people-search and data broker sites for your personal informa
 
 | # | What's needed | Why it's blocking |
 |---|---|---|
-| 1 | Decision: scheduled re-scans or manual-only for MVP? | Affects Phase 3 scan engine design |
-| 2 | Decision: invite-only or open registration? | Affects auth + user management scope |
+| ~~1~~ | ~~Decision: scheduled re-scans or manual-only for MVP?~~ | ✅ Manual-only |
+| ~~2~~ | ~~Decision: invite-only or open registration?~~ | ✅ Invite-only |
 | 3 | Decision: custom domain? | Needed before production deploy |
 
 ---
@@ -126,6 +126,8 @@ TELEGRAM_CHAT_ID=267671508
 - **Per-broker adapters** — each broker is an isolated module. One site changing its flow doesn't break others.
 - **Phone + email first** — highest-value removal targets. Address/relatives as secondary.
 - **Manual fallback** — if Playwright automation hits a CAPTCHA or fails, generate human-readable step-by-step removal instructions instead of silently failing.
+- **Manual scans only** — no scheduled/cron re-scans in MVP. User triggers each scan.
+- **Invite-only** — no open registration. Admin creates invite codes for trusted users.
 
 ---
 

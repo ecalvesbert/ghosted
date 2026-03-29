@@ -109,8 +109,8 @@ Phone and email removal first. Name/address as secondary.
 
 - [ ] What name to use? "Ghosted" — confirmed ✅
 - [ ] Custom domain?
-- [ ] Should scan runs be scheduled (e.g., monthly re-scan) or manual-only for now?
-- [ ] Multi-user: invite-only or open registration?
+- [x] Should scan runs be scheduled (e.g., monthly re-scan) or manual-only for now? → **Manual-only for MVP**
+- [x] Multi-user: invite-only or open registration? → **Invite-only**
 
 ---
 
