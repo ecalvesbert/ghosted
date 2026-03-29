@@ -30,7 +30,7 @@ User provides PII (encrypted at rest)
           ↓
    Scan Engine → asyncio.gather()
    ┌──────────────────────────────────┐
-   │  Spokeo adapter   (Playwright)   │
+   │  Spokeo adapter   (Playwright → Browserbase)  │
    │  Whitepages adapter              │
    │  BeenVerified adapter            │
    │  Intelius adapter                │
@@ -71,11 +71,11 @@ User provides PII (encrypted at rest)
 | Frontend | Next.js 14 + TypeScript + Tailwind |
 | Backend | Python + FastAPI |
 | Database | PostgreSQL + Alembic |
-| Browser automation | Playwright (Chromium) |
+| Browser automation | Playwright via Browserbase (managed Chromium) |
 | Task queue | Celery + Redis |
 | Auth | JWT + bcrypt |
 | Encryption | Python cryptography (Fernet) |
-| Hosting | Railway (backend) + Vercel (frontend) |
+| Hosting | Railway Pro (backend) + Vercel (frontend) |
 
 ---
 
@@ -114,6 +114,8 @@ REDIS_URL=                # Redis connection string (auto-injected by Railway)
 JWT_SECRET=               # Random hex string for JWT signing
 ENCRYPTION_KEY=           # Fernet key for PII encryption — back this up
 ADMIN_BOOTSTRAP_SECRET=   # One-time secret for creating the first admin user
+BROWSERBASE_API_KEY=      # Browserbase API key for managed browser sessions
+BROWSERBASE_PROJECT_ID=   # Browserbase project ID
 TELEGRAM_BOT_TOKEN=       # For scan completion / removal confirmation alerts
 TELEGRAM_CHAT_ID=         # Your Telegram chat ID
 

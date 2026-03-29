@@ -36,15 +36,16 @@ Phone and email removal first. Name/address as secondary.
 | Frontend | Next.js + TypeScript + Tailwind | Proven stack, dark theme, fast | Free (Vercel) |
 | Backend | Python + FastAPI | Async, fits automation workflows | Free (Railway) |
 | Database | PostgreSQL | User profiles, scan results, removal history | Free tier (Railway) |
-| Browser automation | Playwright | JS-heavy broker sites, form fills, clicks | Free (open source) |
+| Browser automation | Playwright via Browserbase | Managed Chromium — no local browser, stealth/proxy built in | Free tier + pay-per-use |
 | Auth | JWT + bcrypt | Simple, no third-party, keeps PII local | Free |
 | Encryption | Python cryptography (Fernet) | Encrypt all PII at rest in DB | Free |
 | Task queue | Celery + Redis | Background scans, non-blocking | Free |
-| Hosting | Railway + Vercel | Proven from SuPM | ~$5/mo |
+| Hosting | Railway Pro + Vercel | 8GB RAM, proven from SuPM | ~$20/mo |
 
 **Monthly cost estimate:**
-- Solo: ~$5/mo (Railway hobby)
-- Small group (5-10 users): ~$5-10/mo
+- Railway Pro: ~$20/mo (8GB RAM, reliable for background workers)
+- Browserbase: free tier covers MVP volume; pay-per-use after
+- Vercel: free tier
 - No AI API costs — pure automation
 
 ---
@@ -76,7 +77,7 @@ Phone and email removal first. Name/address as secondary.
 - [x] Alembic for DB migrations — schema changes without data loss
 - [x] Admin bootstrap endpoint — one-time, secret-gated, self-disabling
 - [x] Celery job results persisted in PostgreSQL — survive Redis restarts
-- [x] Custom Railway Dockerfile with Playwright/Chromium pre-installed — avoid build timeouts
+- [x] Browserbase for managed browser sessions — no Chromium in container, stealth/proxy built in, eliminates OOM risk
 
 ---
 
@@ -85,7 +86,7 @@ Phone and email removal first. Name/address as secondary.
 | Phase | Description | Est. Time | Status |
 |---|---|---|---|
 | 0 | GitHub repo creation, PLANNING.md, CONTRACTS.md | Done | ✅ |
-| 1 | Foundation — scaffold, Alembic migrations, CI, custom Dockerfile (Playwright), Railway + Vercel wired up, encrypted user profiles, admin bootstrap | 2 days | 🔲 |
+| 1 | Foundation — scaffold, Alembic migrations, CI, Browserbase integration, Railway Pro + Vercel wired up, encrypted user profiles, admin bootstrap | 2 days | 🔲 |
 | 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) — concurrent, with timeouts + rate limits | 3 days | 🔲 |
 | 3 | Scan engine — concurrent broker execution, 1-scan-per-user limit, results to PostgreSQL | 2 days | 🔲 |
 | 4 | Review UI — show findings, approve/skip per listing | 2 days | 🔲 |
@@ -118,7 +119,7 @@ Phone and email removal first. Name/address as secondary.
 |---|---|
 | **ToS / Legal** | Most brokers prohibit automated opt-outs. Mitigations: aggressive rate limiting (0.5 req/s), respect robots.txt, randomize request timing, manual fallback as primary path if detected. This is a personal/private tool — not a commercial service — which reduces but does not eliminate risk. |
 | **ENCRYPTION_KEY loss** | If the Fernet key is lost, all PII is unrecoverable. Mitigation: document key backup in Railway env vars, add re-encryption utility in Phase 8. |
-| **Railway Chromium build size** | Playwright + Chromium is ~400MB. Mitigations: custom Dockerfile, Railway persistent build cache. |
+| ~~**Railway Chromium build size**~~ | ~~Playwright + Chromium is ~400MB.~~ Resolved: Browserbase runs browsers remotely — no Chromium in container. |
 | **Redis restart = lost Celery jobs** | Mitigated by persisting Celery task results in PostgreSQL, not just Redis. |
 
 ## Open Questions at Planning Time
@@ -134,7 +135,7 @@ Phone and email removal first. Name/address as secondary.
 
 | Date | Change | Reason |
 |---|---|---|
-| | | |
+| 2026-03-29 | Playwright → Browserbase, Railway hobby → Pro | Eliminate OOM risk, stealth/proxy for broker sites, lightweight container |
 
 ---
 
@@ -143,6 +144,8 @@ Phone and email removal first. Name/address as secondary.
 ```bash
 ADMIN_BOOTSTRAP_SECRET=   # one-time secret for creating first admin user
 ENCRYPTION_KEY=           # Fernet key — back this up, loss = unrecoverable PII
+BROWSERBASE_API_KEY=      # Browserbase API key for managed browser sessions
+BROWSERBASE_PROJECT_ID=   # Browserbase project ID
 ```
 
 _Last updated: 2026-03-29_

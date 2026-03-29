@@ -185,6 +185,11 @@ class InviteCode(BaseModel):
 
 Every broker adapter must implement this interface. No exceptions.
 
+Adapters connect to Browserbase for managed browser sessions (no local Chromium):
+```python
+browser = await playwright.chromium.connect_over_cdp(browserbase_ws_url)
+```
+
 ```python
 class BrokerAdapter:
     slug: str                       # e.g. "spokeo" — matches DB broker slug
@@ -329,3 +334,4 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 | 1.0 | 2026-03-29 | Initial contracts |
 | 1.1 | 2026-03-29 | Added UserProfilePublic, UserProfileUpdate, per-broker timeout + rate_limit_rps, bootstrap endpoint, scan concurrency rules, SCAN_ALREADY_RUNNING error code |
 | 1.2 | 2026-03-29 | Renamed `confidence` → `priority` on FoundListing; added Priority Scoring section (PII-exposure-based urgency) |
+| 1.3 | 2026-03-29 | Broker adapters use Browserbase (managed Chromium) instead of local Playwright |
