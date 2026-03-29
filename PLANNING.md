@@ -19,7 +19,7 @@ Edward + friends and family (small trusted group). No heavy auth but PII must be
 No strong preference — using same proven stack as SuPM.
 
 **Hosting preference:**
-Railway (backend) + Vercel (frontend). Local-first for development.
+Railway (backend) + Vercel (frontend). **Build straight to prod — no local dev setup.**
 
 **Domain:**
 Not decided yet.
@@ -77,7 +77,7 @@ Phone and email removal first. Name/address as secondary.
 | Phase | Description | Est. Time | Status |
 |---|---|---|---|
 | 0 | GitHub repo creation | Done | ✅ |
-| 1 | Foundation — scaffold, CI, Docker, encrypted user profiles | 1 day | 🔲 |
+| 1 | Foundation — scaffold, CI, Railway + Vercel wired up, encrypted user profiles | 1 day | 🔲 |
 | 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) | 3 days | 🔲 |
 | 3 | Scan engine — search each broker, return found listings | 2 days | 🔲 |
 | 4 | Review UI — show findings, approve/skip per listing | 2 days | 🔲 |

@@ -128,6 +128,7 @@ TELEGRAM_CHAT_ID=267671508
 - **Manual fallback** — if Playwright automation hits a CAPTCHA or fails, generate human-readable step-by-step removal instructions instead of silently failing.
 - **Manual scans only** — no scheduled/cron re-scans in MVP. User triggers each scan.
 - **Invite-only** — no open registration. Admin creates invite codes for trusted users.
+- **Straight to prod** — no local dev environment. Railway + Vercel from day one, CI/CD on every push.
 
 ---
 
