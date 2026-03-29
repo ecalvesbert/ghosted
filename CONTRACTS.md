@@ -181,6 +181,47 @@ class InviteCode(BaseModel):
 
 ---
 
+## Decryption Strategy
+
+**Adapters always receive plaintext. They never decrypt anything themselves.**
+
+The scan engine is responsible for decrypting PII before passing it to adapters:
+
+```python
+class DecryptedProfile:
+    """
+    Ephemeral, in-memory only. Never persisted, never logged.
+    Created by the scan engine from UserProfile, passed to adapters.
+    Discarded after the scan completes.
+    """
+    id: UUID
+    full_name: str
+    phone_numbers: list[str]
+    email_addresses: list[str]
+    addresses: list[str]
+    age_range: Optional[str]
+    relatives: list[str]
+```
+
+Decryption flow:
+```
+UserProfile (encrypted fields from DB)
+    ↓  scan engine calls decrypt_profile(user)
+DecryptedProfile (plaintext, in-memory only)
+    ↓  passed to all adapters via asyncio.gather()
+adapter.search(decrypted_profile)
+    ↓  adapters discard after use
+FoundListings (only broker-sourced listing data — no profile PII)
+```
+
+Rules:
+- `DecryptedProfile` is **never** written to disk, DB, logs, or status files
+- Decryption happens once per scan in the scan engine, not per-adapter
+- Adapters must not store or forward any field from `DecryptedProfile`
+- `FoundListing` PII (phones, emails, addresses) comes from the **broker's listing**, not the profile
+
+---
+
 ## Broker Adapter Interface
 
 Every broker adapter must implement this interface. No exceptions.
@@ -200,7 +241,7 @@ class BrokerAdapter:
     display_name: str               # e.g. "Spokeo"
     opt_out_url: str                # base opt-out URL for reference
 
-    async def search(self, profile: UserProfile) -> list[FoundListing]:
+    async def search(self, profile: DecryptedProfile) -> list[FoundListing]:
         """
         Search broker for user's info.
         Returns list of FoundListing (status=pending_review).
@@ -339,3 +380,4 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 | 1.1 | 2026-03-29 | Added UserProfilePublic, UserProfileUpdate, per-broker timeout + rate_limit_rps, bootstrap endpoint, scan concurrency rules, SCAN_ALREADY_RUNNING error code |
 | 1.2 | 2026-03-29 | Renamed `confidence` → `priority` on FoundListing; added Priority Scoring section (PII-exposure-based urgency) |
 | 1.3 | 2026-03-29 | Broker adapters use Browserbase (managed Chromium) instead of local Playwright |
+| 1.4 | 2026-03-29 | Added DecryptedProfile + decryption strategy — scan engine decrypts once, adapters always receive plaintext |
