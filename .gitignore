@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+
+# Agent monitor (runtime files — not committed)
+status/*.json
+status/*.probe
+
+# Keep the status dir itself
+!status/.gitkeep
