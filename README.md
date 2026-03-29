@@ -71,7 +71,7 @@ User provides PII (encrypted at rest)
 | Frontend | Next.js 14 + TypeScript + Tailwind |
 | Backend | Python + FastAPI |
 | Database | PostgreSQL + Alembic |
-| Browser automation | Playwright via Browserbase (managed Chromium) |
+| Browser automation | Playwright + `browserbase` Python SDK (managed Chromium) |
 | Task queue | Celery + Redis |
 | Auth | JWT + bcrypt |
 | Encryption | Python cryptography (Fernet) |

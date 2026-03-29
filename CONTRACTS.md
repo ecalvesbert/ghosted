@@ -185,9 +185,13 @@ class InviteCode(BaseModel):
 
 Every broker adapter must implement this interface. No exceptions.
 
-Adapters connect to Browserbase for managed browser sessions (no local Chromium):
+Adapters connect to Browserbase for managed browser sessions (no local Chromium).
+Uses `browserbase` Python SDK + Playwright:
 ```python
-browser = await playwright.chromium.connect_over_cdp(browserbase_ws_url)
+from browserbase import Browserbase
+bb = Browserbase(api_key=BROWSERBASE_API_KEY)
+session = bb.sessions.create(project_id=BROWSERBASE_PROJECT_ID)
+browser = await playwright.chromium.connect_over_cdp(session.connect_url)
 ```
 
 ```python
