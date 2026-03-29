@@ -120,6 +120,37 @@ class RemovalRequest(BaseModel):
     status: ListingStatus               # mirrors listing status
 ```
 
+### UserProfilePublic
+What the API returns — PII decrypted for the authenticated user only. Never returned for other users.
+
+```python
+class UserProfilePublic(BaseModel):
+    id: UUID
+    email: str                      # decrypted, only returned to the owning user
+    full_name: str                  # decrypted
+    phone_numbers: list[str]        # decrypted
+    email_addresses: list[str]      # decrypted
+    addresses: list[str]            # decrypted
+    age_range: Optional[str]        # decrypted
+    relatives: list[str]            # decrypted
+    created_at: datetime
+    updated_at: datetime
+    # Never returned: hashed_password, invite_code_used
+```
+
+### UserProfileUpdate
+Fields accepted on PUT /api/profile. All optional — partial updates allowed.
+
+```python
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str]
+    phone_numbers: Optional[list[str]]
+    email_addresses: Optional[list[str]]
+    addresses: Optional[list[str]]
+    age_range: Optional[str]
+    relatives: Optional[list[str]]
+```
+
 ### InviteCode
 
 ```python
@@ -168,6 +199,11 @@ class BrokerAdapter:
         Updates status to confirmed or keeps as removal_sent.
         """
         ...
+
+    # Class-level constants (set per adapter)
+    timeout_seconds: int = 120      # per-operation timeout — MUST be respected
+    rate_limit_rps: float = 0.5     # max requests per second to this broker
+    requires_email_verify: bool     # True if broker sends a verification email
 ```
 
 ### BrokerError
@@ -227,9 +263,15 @@ class BrokerError(Exception):
 
 | Method | Path | Request Body | Response |
 |---|---|---|---|
+| POST | `/api/admin/bootstrap` | `{email, password, admin_secret}` | `{token: str}` — **one-time use only, disabled after first call** |
 | POST | `/api/admin/invites` | `{expires_in_days?: int}` | `{code: str}` |
 | GET | `/api/admin/invites` | — | `list[InviteCode]` |
 | GET | `/api/admin/brokers` | — | `list[BrokerStatus]` |
+
+`/api/admin/bootstrap` requirements:
+- Requires `ADMIN_BOOTSTRAP_SECRET` env var to match `admin_secret` in request
+- Returns 410 Gone if an admin user already exists
+- Creates first admin user and disables itself permanently
 
 ### Error Response (all endpoints)
 
@@ -240,7 +282,7 @@ class BrokerError(Exception):
 }
 ```
 
-Common codes: `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_INVITE`, `BROKER_ERROR`, `CAPTCHA_REQUIRED`
+Common codes: `UNAUTHORIZED`, `NOT_FOUND`, `INVALID_INVITE`, `BROKER_ERROR`, `CAPTCHA_REQUIRED`, `SCAN_ALREADY_RUNNING`, `BOOTSTRAP_ALREADY_DONE`
 
 ---
 
@@ -255,8 +297,18 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 
 ---
 
+## Scan Concurrency Rules
+
+- Max 1 active scan per user at a time — enforced at `POST /api/scans` (returns 409 + `SCAN_ALREADY_RUNNING` if one is in progress)
+- Broker adapters run concurrently within a scan: `asyncio.gather(*[adapter.search(profile) for adapter in adapters], return_exceptions=True)`
+- Default concurrency limit: all Tier 1 brokers in parallel (max 5)
+- Each adapter has its own `timeout_seconds` — a hung broker does not block others
+
+---
+
 ## Versioning
 
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-03-29 | Initial contracts |
+| 1.1 | 2026-03-29 | Added UserProfilePublic, UserProfileUpdate, per-broker timeout + rate_limit_rps, bootstrap endpoint, scan concurrency rules, SCAN_ALREADY_RUNNING error code |

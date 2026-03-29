@@ -69,6 +69,14 @@ Phone and email removal first. Name/address as secondary.
 - [x] Manual fallback — if automation fails, generate human-readable removal instructions
 - [x] No raw PII in logs — ever
 - [x] Per-user data isolation enforced at DB query level
+- [x] Per-broker timeout (120s default) — hung broker doesn't block scan
+- [x] Per-broker rate limit (0.5 req/s default) — reduce detection/blocking risk
+- [x] Concurrent broker execution — `asyncio.gather()` across all adapters
+- [x] 1 active scan per user limit — enforced at API level (409 if already running)
+- [x] Alembic for DB migrations — schema changes without data loss
+- [x] Admin bootstrap endpoint — one-time, secret-gated, self-disabling
+- [x] Celery job results persisted in PostgreSQL — survive Redis restarts
+- [x] Custom Railway Dockerfile with Playwright/Chromium pre-installed — avoid build timeouts
 
 ---
 
@@ -76,16 +84,15 @@ Phone and email removal first. Name/address as secondary.
 
 | Phase | Description | Est. Time | Status |
 |---|---|---|---|
-| 0 | GitHub repo creation | Done | ✅ |
-| 1 | Foundation — scaffold, CI, Railway + Vercel wired up, encrypted user profiles | 1 day | 🔲 |
-| 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) | 3 days | 🔲 |
-| 3 | Scan engine — search each broker, return found listings | 2 days | 🔲 |
+| 0 | GitHub repo creation, PLANNING.md, CONTRACTS.md | Done | ✅ |
+| 1 | Foundation — scaffold, Alembic migrations, CI, custom Dockerfile (Playwright), Railway + Vercel wired up, encrypted user profiles, admin bootstrap | 2 days | 🔲 |
+| 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) — concurrent, with timeouts + rate limits | 3 days | 🔲 |
+| 3 | Scan engine — concurrent broker execution, 1-scan-per-user limit, results to PostgreSQL | 2 days | 🔲 |
 | 4 | Review UI — show findings, approve/skip per listing | 2 days | 🔲 |
-| 5 | Removal engine — submit opt-out requests for approved listings | 2 days | 🔲 |
+| 5 | Removal engine — submit opt-out for approved listings, Celery tasks persisted in Postgres | 2 days | 🔲 |
 | 6 | Status tracking — re-check removed listings, confirm deletion | 1 day | 🔲 |
 | 7 | Notifications — Telegram alert on scan complete / removal confirmed | 1 day | 🔲 |
-| 8 | Hosting — Railway + Vercel deploy | 1 day | 🔲 |
-| 9 | Hardening — more brokers, CAPTCHA handling, manual fallbacks | 2 days | 🔲 |
+| 8 | Hardening — more brokers, ENCRYPTION_KEY rotation utility, manual fallbacks | 2 days | 🔲 |
 
 **Total estimated time:** ~15 days
 
@@ -105,6 +112,15 @@ Phone and email removal first. Name/address as secondary.
 
 ---
 
+## Known Risks & Mitigations
+
+| Risk | Notes |
+|---|---|
+| **ToS / Legal** | Most brokers prohibit automated opt-outs. Mitigations: aggressive rate limiting (0.5 req/s), respect robots.txt, randomize request timing, manual fallback as primary path if detected. This is a personal/private tool — not a commercial service — which reduces but does not eliminate risk. |
+| **ENCRYPTION_KEY loss** | If the Fernet key is lost, all PII is unrecoverable. Mitigation: document key backup in Railway env vars, add re-encryption utility in Phase 8. |
+| **Railway Chromium build size** | Playwright + Chromium is ~400MB. Mitigations: custom Dockerfile, Railway persistent build cache. |
+| **Redis restart = lost Celery jobs** | Mitigated by persisting Celery task results in PostgreSQL, not just Redis. |
+
 ## Open Questions at Planning Time
 
 - [ ] What name to use? "Ghosted" — confirmed ✅
@@ -121,5 +137,12 @@ Phone and email removal first. Name/address as secondary.
 | | | |
 
 ---
+
+## Additional Required Env Vars (discovered during gap analysis)
+
+```bash
+ADMIN_BOOTSTRAP_SECRET=   # one-time secret for creating first admin user
+ENCRYPTION_KEY=           # Fernet key — back this up, loss = unrecoverable PII
+```
 
 _Last updated: 2026-03-29_
