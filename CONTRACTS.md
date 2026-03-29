@@ -94,13 +94,29 @@ class FoundListing(BaseModel):
     addresses: list[str]            # addresses on the listing
     age: Optional[str]
     relatives: list[str]
-    confidence: float               # 0.0–1.0 — how likely this matches the user
+    priority: float                 # 0.0–1.0 — removal urgency based on PII exposure (see Priority Scoring)
     status: ListingStatus           # starts as "pending_review"
     removal_method: Optional[RemovalMethod]
     manual_instructions: Optional[str]  # populated if method=manual
     created_at: datetime
     updated_at: datetime
 ```
+
+### Priority Scoring
+
+The `priority` field on `FoundListing` indicates removal urgency based on what PII the listing exposes. Broker adapters must compute this using the following rules:
+
+| PII Exposed | Score |
+|---|---|
+| Phone number or email address | 0.9–1.0 |
+| Physical address (no phone/email) | 0.7–0.8 |
+| Name + city/state only | 0.3–0.6 |
+
+Scores stack toward 1.0: a listing with phone + email + address = 1.0.
+
+The Review UI sorts listings by `priority` descending — phone/email matches are shown first.
+
+---
 
 ### RemovalRequest
 Created when user approves a listing for removal.
@@ -312,3 +328,4 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 |---|---|---|
 | 1.0 | 2026-03-29 | Initial contracts |
 | 1.1 | 2026-03-29 | Added UserProfilePublic, UserProfileUpdate, per-broker timeout + rate_limit_rps, bootstrap endpoint, scan concurrency rules, SCAN_ALREADY_RUNNING error code |
+| 1.2 | 2026-03-29 | Renamed `confidence` → `priority` on FoundListing; added Priority Scoring section (PII-exposure-based urgency) |
