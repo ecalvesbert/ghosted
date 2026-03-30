@@ -13,7 +13,7 @@ from app.tasks.scan_task import run_scan
 
 router = APIRouter(prefix="/api/scans", tags=["scans"])
 
-DEFAULT_BROKERS = ["spokeo", "whitepages", "beenverified", "intelius", "peoplefinder"]
+DEFAULT_BROKERS = ["spokeo"]
 
 
 @router.post("", response_model=ScanJobResponse, status_code=201)

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -28,4 +28,4 @@ class FoundListingResponse(BaseModel):
 
 
 class ListingUpdateRequest(BaseModel):
-    status: str  # "approved" or "skipped"
+    status: Literal["approved", "skipped"]
