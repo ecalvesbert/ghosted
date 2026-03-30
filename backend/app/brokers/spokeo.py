@@ -92,6 +92,7 @@ class SpokeoAdapter(BrokerAdapter):
         bb = self._get_browserbase()
         project_id = self._get_project_id()
         session = bb.sessions.create(project_id=project_id)
+        logger.info("Browserbase session created: https://browserbase.com/sessions/%s", session.id)
 
         playwright = await async_playwright().start()
         listings: list[FoundListing] = []

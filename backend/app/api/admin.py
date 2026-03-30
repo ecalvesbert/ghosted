@@ -1,3 +1,4 @@
+import os
 import secrets
 import string
 from datetime import datetime, timedelta, timezone
@@ -9,6 +10,7 @@ from app.database import get_db
 from app.models.user import UserProfile
 from app.models.invite import InviteCode
 from app.models.scan import ScanJob
+from app.services.encryption import decrypt_profile
 from app.schemas.auth import BootstrapRequest
 from app.schemas.invite import InviteCreateRequest, InviteCodeResponse
 from app.services.auth import hash_password, create_token, get_admin_user
@@ -98,6 +100,36 @@ def cancel_scan(
     scan.completed_at = datetime.now(timezone.utc)
     db.commit()
     return {"status": "cancelled"}
+
+
+@router.post("/debug/browserbase")
+def debug_browserbase(
+    admin: UserProfile = Depends(get_admin_user),
+):
+    """Create a Browserbase session and return the live view URL for debugging."""
+    from browserbase import Browserbase
+
+    api_key = os.getenv("BROWSERBASE_API_KEY")
+    project_id = os.getenv("BROWSERBASE_PROJECT_ID")
+    if not api_key or not project_id:
+        raise HTTPException(status_code=500, detail="Browserbase not configured")
+
+    bb = Browserbase(api_key=api_key)
+    session = bb.sessions.create(project_id=project_id)
+
+    # Build Spokeo search URL from admin's profile
+    profile = decrypt_profile(admin)
+    location = ""
+    if profile.city and profile.state:
+        location = f", {profile.city}, {profile.state}"
+    search_url = f"https://www.spokeo.com/search?q={profile.full_name.replace(' ', '+')}{location.replace(' ', '+').replace(',', '%2C')}"
+
+    return {
+        "session_id": session.id,
+        "connect_url": session.connect_url,
+        "live_view": f"https://www.browserbase.com/sessions/{session.id}",
+        "spokeo_search_url": search_url,
+    }
 
 
 @router.get("/brokers")
