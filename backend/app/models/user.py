@@ -21,6 +21,8 @@ class UserProfile(Base):
     phone_numbers = Column(Text, nullable=True)       # [ENCRYPTED] JSON list
     email_addresses = Column(Text, nullable=True)     # [ENCRYPTED] JSON list
     addresses = Column(Text, nullable=True)           # [ENCRYPTED] JSON list
+    city = Column(Text, nullable=True)                 # [ENCRYPTED]
+    state = Column(Text, nullable=True)                # [ENCRYPTED]
     age_range = Column(Text, nullable=True)           # [ENCRYPTED]
     relatives = Column(Text, nullable=True)           # [ENCRYPTED] JSON list
     telegram_chat_id = Column(String(100), nullable=True)

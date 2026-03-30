@@ -49,6 +49,8 @@ class DecryptedProfile:
     phone_numbers: list[str]
     email_addresses: list[str]
     addresses: list[str]
+    city: Optional[str]
+    state: Optional[str]
     age_range: Optional[str]
     relatives: list[str]
 
@@ -61,6 +63,8 @@ def decrypt_profile(user) -> DecryptedProfile:
         phone_numbers=decrypt_list(user.phone_numbers) if user.phone_numbers else [],
         email_addresses=decrypt_list(user.email_addresses) if user.email_addresses else [],
         addresses=decrypt_list(user.addresses) if user.addresses else [],
+        city=decrypt(user.city) if user.city else None,
+        state=decrypt(user.state) if user.state else None,
         age_range=decrypt(user.age_range) if user.age_range else None,
         relatives=decrypt_list(user.relatives) if user.relatives else [],
     )

@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [phones, setPhones] = useState("");
   const [emails, setEmails] = useState("");
   const [addresses, setAddresses] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [ageRange, setAgeRange] = useState("");
   const [relatives, setRelatives] = useState("");
   const [telegramChatId, setTelegramChatId] = useState("");
@@ -33,6 +35,8 @@ export default function ProfilePage() {
         setPhones(p.phone_numbers.join(", "));
         setEmails(p.email_addresses.join(", "));
         setAddresses(p.addresses.join("\n"));
+        setCity(p.city || "");
+        setState(p.state || "");
         setAgeRange(p.age_range || "");
         setRelatives(p.relatives.join(", "));
         setTelegramChatId(p.telegram_chat_id || "");
@@ -51,6 +55,8 @@ export default function ProfilePage() {
         phone_numbers: phones.split(",").map((s) => s.trim()).filter(Boolean),
         email_addresses: emails.split(",").map((s) => s.trim()).filter(Boolean),
         addresses: addresses.split("\n").map((s) => s.trim()).filter(Boolean),
+        city: city || undefined,
+        state: state || undefined,
         age_range: ageRange || undefined,
         relatives: relatives.split(",").map((s) => s.trim()).filter(Boolean),
         telegram_chat_id: telegramChatId || undefined,
@@ -77,6 +83,10 @@ export default function ProfilePage() {
           <Input id="fullName" label="Full Name *" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
           <Input id="phones" label="Phone Numbers * (comma-separated)" value={phones} onChange={(e) => setPhones(e.target.value)} required />
           <Input id="emails" label="Email Addresses * (comma-separated)" value={emails} onChange={(e) => setEmails(e.target.value)} required />
+          <div className="grid grid-cols-2 gap-4">
+            <Input id="city" label="City *" value={city} onChange={(e) => setCity(e.target.value)} required />
+            <Input id="state" label="State *" value={state} onChange={(e) => setState(e.target.value)} required />
+          </div>
           <div className="space-y-1.5">
             <label htmlFor="addresses" className="text-sm text-[var(--muted-foreground)]">Addresses (one per line)</label>
             <textarea

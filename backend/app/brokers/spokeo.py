@@ -101,15 +101,15 @@ class SpokeoAdapter(BrokerAdapter):
             context = browser.contexts[0]
             page = context.pages[0] if context.pages else await context.new_page()
 
-            # Build search query: "First Last" + first city/state
+            # Build search query: "First Last" + city/state
             name = profile.full_name
             location_suffix = ""
-            for addr in profile.addresses:
-                parsed = _parse_city_state(addr)
-                if parsed:
-                    city, state = parsed
-                    location_suffix = f", {city}, {state}"
-                    break
+            if profile.city and profile.state:
+                location_suffix = f", {profile.city}, {profile.state}"
+            elif profile.city:
+                location_suffix = f", {profile.city}"
+            elif profile.state:
+                location_suffix = f", {profile.state}"
 
             search_url = f"https://www.spokeo.com/search?q={name.replace(' ', '+')}{location_suffix.replace(' ', '+').replace(',', '%2C')}"
 

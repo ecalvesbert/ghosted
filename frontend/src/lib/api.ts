@@ -66,6 +66,8 @@ export interface UserProfile {
   phone_numbers: string[];
   email_addresses: string[];
   addresses: string[];
+  city: string | null;
+  state: string | null;
   age_range: string | null;
   relatives: string[];
   telegram_chat_id: string | null;
@@ -78,6 +80,8 @@ export interface ProfileUpdate {
   phone_numbers?: string[];
   email_addresses?: string[];
   addresses?: string[];
+  city?: string;
+  state?: string;
   age_range?: string;
   relatives?: string[];
   telegram_chat_id?: string;

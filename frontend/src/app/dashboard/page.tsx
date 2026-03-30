@@ -36,7 +36,7 @@ export default function DashboardPage() {
       removalsApi.summary(token).then(setRemovalSummary).catch(() => {});
       profileApi.get(token).then((p) => {
         setProfileComplete(
-          !!p.full_name && p.phone_numbers.length > 0 && p.email_addresses.length > 0
+          !!p.full_name && p.phone_numbers.length > 0 && p.email_addresses.length > 0 && !!p.city && !!p.state
         );
       }).catch(() => {});
     }
@@ -75,7 +75,7 @@ export default function DashboardPage() {
 
         {!profileComplete && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, and email are required) before starting a scan.
+            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, email, city, and state are required) before starting a scan.
           </div>
         )}
 

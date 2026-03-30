@@ -20,6 +20,8 @@ def _to_public(user: UserProfile) -> UserProfilePublic:
         phone_numbers=decrypt_list(user.phone_numbers) if user.phone_numbers else [],
         email_addresses=decrypt_list(user.email_addresses) if user.email_addresses else [],
         addresses=decrypt_list(user.addresses) if user.addresses else [],
+        city=decrypt(user.city) if user.city else None,
+        state=decrypt(user.state) if user.state else None,
         age_range=decrypt(user.age_range) if user.age_range else None,
         relatives=decrypt_list(user.relatives) if user.relatives else [],
         telegram_chat_id=user.telegram_chat_id,
@@ -47,6 +49,10 @@ def update_profile(
         current_user.email_addresses = encrypt_list(update.email_addresses)
     if update.addresses is not None:
         current_user.addresses = encrypt_list(update.addresses)
+    if update.city is not None:
+        current_user.city = encrypt(update.city)
+    if update.state is not None:
+        current_user.state = encrypt(update.state)
     if update.age_range is not None:
         current_user.age_range = encrypt(update.age_range)
     if update.relatives is not None:

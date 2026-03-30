@@ -12,6 +12,8 @@ class UserProfilePublic(BaseModel):
     phone_numbers: list[str]
     email_addresses: list[str]
     addresses: list[str]
+    city: Optional[str]
+    state: Optional[str]
     age_range: Optional[str]
     relatives: list[str]
     telegram_chat_id: Optional[str]
@@ -36,6 +38,8 @@ class UserProfileUpdate(BaseModel):
     phone_numbers: Optional[list[str]] = None
     email_addresses: Optional[list[str]] = None
     addresses: Optional[list[str]] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
     age_range: Optional[str] = None
     relatives: Optional[list[str]] = None
     telegram_chat_id: Optional[str] = None
