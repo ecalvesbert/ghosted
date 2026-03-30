@@ -1,3 +1,7 @@
+import logging
+
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -5,9 +9,21 @@ from fastapi.responses import JSONResponse
 from app.config import get_settings
 from app.api import auth, profile, scans, listings, removals, admin
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 app = FastAPI(title="Ghosted", version="1.0.0")
+
+
+@app.on_event("startup")
+def run_migrations():
+    try:
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations applied successfully")
+    except Exception as e:
+        logger.error(f"Migration failed: {e}")
+        raise
 
 app.add_middleware(
     CORSMiddleware,
