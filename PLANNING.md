@@ -146,6 +146,10 @@ ADMIN_BOOTSTRAP_SECRET=   # one-time secret for creating first admin user
 ENCRYPTION_KEY=           # Fernet key — back this up, loss = unrecoverable PII
 BROWSERBASE_API_KEY=      # Browserbase API key for managed browser sessions
 BROWSERBASE_PROJECT_ID=   # Browserbase project ID
+TELEGRAM_BOT_TOKEN=       # bot token for notifications
+# Telegram chat ID is per-user — stored in UserProfile, not a global env var
+# Vercel:
+NEXT_PUBLIC_API_URL=      # Railway backend URL
 ```
 
 _Last updated: 2026-03-29_

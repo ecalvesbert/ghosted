@@ -56,6 +56,7 @@ class UserProfile(BaseModel):
     addresses: list[str]            # [ENCRYPTED] — street, city, state, zip
     age_range: Optional[str]        # [ENCRYPTED] — e.g. "35-40"
     relatives: list[str]            # [ENCRYPTED] — optional, helps disambiguate
+    telegram_chat_id: Optional[str] # for notifications — user sets in profile settings
     created_at: datetime
     updated_at: datetime
 ```
@@ -149,6 +150,7 @@ class UserProfilePublic(BaseModel):
     addresses: list[str]            # decrypted
     age_range: Optional[str]        # decrypted
     relatives: list[str]            # decrypted
+    telegram_chat_id: Optional[str]
     created_at: datetime
     updated_at: datetime
     # Never returned: hashed_password, invite_code_used
@@ -385,3 +387,4 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 | 1.3 | 2026-03-29 | Broker adapters use Browserbase (managed Chromium) instead of local Playwright |
 | 1.4 | 2026-03-29 | Added DecryptedProfile + decryption strategy — scan engine decrypts once, adapters always receive plaintext |
 | 1.5 | 2026-03-29 | Sequential broker execution for MVP — one broker at a time, progress tracked live |
+| 1.6 | 2026-03-29 | Added telegram_chat_id to UserProfile/UserProfilePublic — per-user notifications, not global env var |

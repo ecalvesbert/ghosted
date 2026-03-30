@@ -115,8 +115,10 @@ ENCRYPTION_KEY=               # Fernet key — back this up, loss = unrecoverabl
 ADMIN_BOOTSTRAP_SECRET=       # one-time secret for first admin user creation
 BROWSERBASE_API_KEY=          # Browserbase managed browser sessions
 BROWSERBASE_PROJECT_ID=       # Browserbase project ID
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=267671508
+TELEGRAM_BOT_TOKEN=           # bot token for scan/removal notifications
+TELEGRAM_CHAT_ID=             # per-user — stored in user profile, not global env var
+# Vercel (frontend):
+NEXT_PUBLIC_API_URL=          # Railway backend URL
 ```
 
 ---
