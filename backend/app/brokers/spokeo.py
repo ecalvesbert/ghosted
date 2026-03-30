@@ -67,7 +67,13 @@ class SpokeoAdapter(BrokerAdapter):
         bb = self._get_browserbase()
         project_id = self._get_project_id()
         session = bb.sessions.create(project_id=project_id)
-        live_url = f"https://www.browserbase.com/sessions/{session.id}"
+
+        # Get interactive debug URL (not the passive dashboard viewer)
+        try:
+            debug_info = bb.sessions.debug(session.id)
+            live_url = debug_info.debugger_fullscreen_url
+        except Exception:
+            live_url = f"https://www.browserbase.com/sessions/{session.id}"
         logger.info("Browserbase session created: %s", live_url)
         if on_session_created:
             on_session_created(live_url)
