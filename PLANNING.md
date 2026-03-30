@@ -72,7 +72,7 @@ Phone and email removal first. Name/address as secondary.
 - [x] Per-user data isolation enforced at DB query level
 - [x] Per-broker timeout (120s default) — hung broker doesn't block scan
 - [x] Per-broker rate limit (0.5 req/s default) — reduce detection/blocking risk
-- [x] Concurrent broker execution — `asyncio.gather()` across all adapters
+- [x] Sequential broker execution — one broker at a time, progress tracked per broker (parallelize in later phase)
 - [x] 1 active scan per user limit — enforced at API level (409 if already running)
 - [x] Alembic for DB migrations — schema changes without data loss
 - [x] Admin bootstrap endpoint — one-time, secret-gated, self-disabling

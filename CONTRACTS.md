@@ -363,12 +363,15 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 
 ---
 
-## Scan Concurrency Rules
+## Scan Execution Rules
 
 - Max 1 active scan per user at a time — enforced at `POST /api/scans` (returns 409 + `SCAN_ALREADY_RUNNING` if one is in progress)
-- Broker adapters run concurrently within a scan: `asyncio.gather(*[adapter.search(profile) for adapter in adapters], return_exceptions=True)`
-- Default concurrency limit: all Tier 1 brokers in parallel (max 5)
-- Each adapter has its own `timeout_seconds` — a hung broker does not block others
+- Brokers are scanned **sequentially**, one at a time, in order of `priority_order` defined per adapter
+- Default order: spokeo → whitepages → beenverified → intelius → peoplefinder
+- Each broker completes (or times out) before the next one starts
+- `ScanJob.brokers_completed` and `ScanJob.brokers_failed` are updated after each broker finishes — enables live progress polling
+- Each adapter has its own `timeout_seconds` — a timed-out broker is marked failed and the scan continues to the next one
+- Concurrency may be added in a future phase; sequential is the MVP design
 
 ---
 
@@ -381,3 +384,4 @@ Fields marked `[ENCRYPTED]` in the models above are stored as Fernet ciphertext.
 | 1.2 | 2026-03-29 | Renamed `confidence` → `priority` on FoundListing; added Priority Scoring section (PII-exposure-based urgency) |
 | 1.3 | 2026-03-29 | Broker adapters use Browserbase (managed Chromium) instead of local Playwright |
 | 1.4 | 2026-03-29 | Added DecryptedProfile + decryption strategy — scan engine decrypts once, adapters always receive plaintext |
+| 1.5 | 2026-03-29 | Sequential broker execution for MVP — one broker at a time, progress tracked live |
