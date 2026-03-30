@@ -19,11 +19,11 @@ Searches the major people-search and data broker sites for your personal informa
 | Frontend | Next.js + TypeScript + Tailwind (dark theme) |
 | Backend | Python + FastAPI |
 | Database | PostgreSQL |
-| Browser automation | Playwright |
+| Browser automation | Browserbase + Playwright SDK (managed Chromium, stealth/proxy) |
 | Auth | JWT + bcrypt |
 | Encryption | Python cryptography (Fernet) — all PII at rest |
 | Task queue | Celery + Redis |
-| Hosting | Vercel (frontend) + Railway (backend/DB/Redis) |
+| Hosting | Vercel (frontend) + Railway Pro (backend/DB/Redis, 8GB RAM) |
 
 ---
 
@@ -108,10 +108,13 @@ User provides: name, email, phone, address (encrypted at rest)
 ## Required Environment Variables
 
 ```bash
-DATABASE_URL=
-REDIS_URL=
-JWT_SECRET=
-ENCRYPTION_KEY=       # Fernet key for PII encryption
+DATABASE_URL=                 # auto-injected by Railway
+REDIS_URL=                    # auto-injected by Railway
+JWT_SECRET=                   # random hex string
+ENCRYPTION_KEY=               # Fernet key — back this up, loss = unrecoverable PII
+ADMIN_BOOTSTRAP_SECRET=       # one-time secret for first admin user creation
+BROWSERBASE_API_KEY=          # Browserbase managed browser sessions
+BROWSERBASE_PROJECT_ID=       # Browserbase project ID
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=267671508
 ```

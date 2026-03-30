@@ -30,7 +30,7 @@ User provides PII (encrypted at rest)
           ↓
    Scan Engine → asyncio.gather()
    ┌──────────────────────────────────┐
-   │  Spokeo adapter   (Playwright → Browserbase)  │
+   │  Spokeo adapter   (Browserbase)               │
    │  Whitepages adapter              │
    │  BeenVerified adapter            │
    │  Intelius adapter                │
