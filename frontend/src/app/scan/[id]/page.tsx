@@ -151,6 +151,7 @@ export default function ScanDetailPage() {
   const [listingList, setListingList] = useState<FoundListing[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [liveViewOpened, setLiveViewOpened] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/login");
@@ -161,6 +162,14 @@ export default function ScanDetailPage() {
     scans.get(token, id).then(setScan).catch(() => {});
     scans.listings(token, id).then(setListingList).catch(() => {});
   }, [token, id]);
+
+  // Auto-open live view when available
+  useEffect(() => {
+    if (scan?.live_view_url && !liveViewOpened) {
+      setLiveViewOpened(true);
+      window.open(scan.live_view_url, "_blank");
+    }
+  }, [scan?.live_view_url, liveViewOpened]);
 
   // Poll while pending/running
   useEffect(() => {
@@ -322,6 +331,16 @@ export default function ScanDetailPage() {
           <div className="text-center py-12">
             <div className="inline-block w-6 h-6 border-2 border-[var(--muted-foreground)] border-t-transparent rounded-full animate-spin mb-3" />
             <p className="text-sm text-[var(--muted-foreground)]">Scanning brokers for your data...</p>
+            {scan?.live_view_url && (
+              <a
+                href={scan.live_view_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 mt-3 text-sm text-emerald-400 hover:text-emerald-300 underline"
+              >
+                Watch live in Browserbase &rarr;
+              </a>
+            )}
             {listingList.length > 0 && (
               <p className="text-xs text-[var(--muted-foreground)] mt-1">
                 {listingList.length} listing{listingList.length !== 1 ? "s" : ""} found so far

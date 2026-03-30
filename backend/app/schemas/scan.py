@@ -20,6 +20,7 @@ class ScanJobResponse(BaseModel):
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
     error: Optional[str]
+    live_view_url: Optional[str]
     created_at: datetime
 
     model_config = {"from_attributes": True}

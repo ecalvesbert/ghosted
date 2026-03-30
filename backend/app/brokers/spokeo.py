@@ -87,12 +87,15 @@ class SpokeoAdapter(BrokerAdapter):
         """Enforce rate_limit_rps = 0.5 → sleep 2 seconds between requests."""
         await asyncio.sleep(1.0 / self.rate_limit_rps)
 
-    async def search(self, profile: DecryptedProfile) -> list[FoundListing]:
+    async def search(self, profile: DecryptedProfile, on_session_created=None) -> list[FoundListing]:
         """Search Spokeo for listings matching the decrypted profile."""
         bb = self._get_browserbase()
         project_id = self._get_project_id()
         session = bb.sessions.create(project_id=project_id)
-        logger.info("Browserbase session created: https://browserbase.com/sessions/%s", session.id)
+        live_url = f"https://www.browserbase.com/sessions/{session.id}"
+        logger.info("Browserbase session created: %s", live_url)
+        if on_session_created:
+            on_session_created(live_url)
 
         playwright = await async_playwright().start()
         listings: list[FoundListing] = []

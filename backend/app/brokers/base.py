@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Literal
+from typing import Callable, Optional, Literal
 
 from app.services.encryption import DecryptedProfile
 from app.models.listing import FoundListing
@@ -30,7 +30,7 @@ class BrokerAdapter(ABC):
     requires_email_verify: bool = False
 
     @abstractmethod
-    async def search(self, profile: DecryptedProfile) -> list[FoundListing]:
+    async def search(self, profile: DecryptedProfile, on_session_created: Callable[[str], None] | None = None) -> list[FoundListing]:
         ...
 
     @abstractmethod

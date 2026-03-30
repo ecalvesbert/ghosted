@@ -64,10 +64,15 @@ def run_scan_sync(scan_id: str, user_id: str, broker_slugs: list[str] | None = N
                     continue
 
                 try:
+                    # Callback to store live view URL on the scan job
+                    def on_session_created(live_url: str):
+                        scan.live_view_url = live_url
+                        db.commit()
+
                     # Run adapter with per-broker timeout
                     listings = asyncio.run(
                         asyncio.wait_for(
-                            adapter.search(decrypted),
+                            adapter.search(decrypted, on_session_created=on_session_created),
                             timeout=adapter.timeout_seconds,
                         )
                     )

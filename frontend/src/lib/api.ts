@@ -107,6 +107,7 @@ export interface ScanJob {
   started_at: string | null;
   completed_at: string | null;
   error: string | null;
+  live_view_url: string | null;
   created_at: string;
 }
 
