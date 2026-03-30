@@ -86,6 +86,7 @@ def run_removal_batch_sync(batch_id: str, user_id: str, broker_slugs: list[str])
                     removal.status = result.get("status", "failed")
                     removal.method = result.get("method", "automated")
                     removal.opt_out_url = result.get("opt_out_url", adapter.opt_out_url)
+                    removal.notes = result.get("notes")
                     removal.last_error = result.get("notes") if removal.status == "failed" else None
                     removal.attempts = 1
                     removal.submitted_at = datetime.now(timezone.utc)

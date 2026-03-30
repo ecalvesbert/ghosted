@@ -86,6 +86,9 @@ function RemovalCard({ removal }: { removal: RemovalRequest }) {
               </a>
             )}
 
+            {removal.notes && removal.status !== "failed" && (
+              <p className="mt-1 text-xs text-emerald-400">{removal.notes}</p>
+            )}
             {removal.last_error && (
               <p className="mt-1 text-xs text-red-400">{removal.last_error}</p>
             )}

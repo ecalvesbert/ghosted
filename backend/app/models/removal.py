@@ -23,5 +23,6 @@ class RemovalRequest(Base):
     recheck_after = Column(DateTime(timezone=True), nullable=True)
     attempts = Column(Integer, nullable=False, default=0)
     last_error = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
     live_view_url = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)

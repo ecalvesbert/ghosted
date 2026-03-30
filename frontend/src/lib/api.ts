@@ -116,6 +116,7 @@ export interface RemovalRequest {
   recheck_after: string | null;
   attempts: number;
   last_error: string | null;
+  notes: string | null;
   live_view_url: string | null;
   created_at: string;
 }

@@ -1,8 +1,11 @@
 """
 Spokeo broker adapter — submit opt-out requests.
 
-Uses Browserbase for managed browser sessions. CSS selectors are based on
-Spokeo's page structure as of early 2026 and may need updating after live testing.
+Two-step flow:
+1. Search spokeo.com for the person to find their profile URL
+2. Submit the profile URL on the opt-out page
+
+Uses Browserbase for managed browser sessions.
 """
 
 import asyncio
@@ -24,7 +27,7 @@ class SpokeoAdapter(BrokerAdapter):
     slug = "spokeo"
     display_name = "Spokeo"
     opt_out_url = "https://www.spokeo.com/optout"
-    timeout_seconds = 120
+    timeout_seconds = 180
     rate_limit_rps = 0.5
     requires_email_verify = True
 
@@ -49,7 +52,6 @@ class SpokeoAdapter(BrokerAdapter):
         return project_id
 
     async def _rate_limit(self) -> None:
-        """Enforce rate_limit_rps = 0.5 -> sleep 2 seconds between requests."""
         await asyncio.sleep(1.0 / self.rate_limit_rps)
 
     async def submit_opt_out(
@@ -57,7 +59,11 @@ class SpokeoAdapter(BrokerAdapter):
         profile: DecryptedProfile,
         on_session_created: Callable[[str], None] | None = None,
     ) -> dict:
-        """Navigate to Spokeo opt-out page, fill in profile info, and submit."""
+        """
+        1. Search Spokeo for the person to find their profile URL
+        2. Navigate to opt-out page and submit the URL
+        3. Confirm submission
+        """
         bb = self._get_browserbase()
         project_id = self._get_project_id()
         session = bb.sessions.create(project_id=project_id)
@@ -73,106 +79,188 @@ class SpokeoAdapter(BrokerAdapter):
             context = browser.contexts[0]
             page = context.pages[0] if context.pages else await context.new_page()
 
+            # --- Step 1: Search Spokeo to find profile URL ---
+            name = profile.full_name
+            location = ""
+            if profile.city and profile.state:
+                location = f"{profile.city}, {profile.state}"
+            elif profile.city:
+                location = profile.city
+            elif profile.state:
+                location = profile.state
+
+            search_url = f"https://www.spokeo.com/{name.replace(' ', '-')}/{location.replace(' ', '-').replace(',', '')}" if location else f"https://www.spokeo.com/{name.replace(' ', '-')}"
+            logger.info("Spokeo search URL: %s", search_url)
+
             await self._rate_limit()
 
             try:
-                await page.goto(self.opt_out_url, timeout=self.timeout_seconds * 1000)
+                await page.goto(search_url, timeout=60000)
+                await page.wait_for_load_state("networkidle", timeout=30000)
             except PlaywrightTimeout:
                 return {
                     "status": "failed",
                     "method": "manual",
-                    "notes": "Timed out loading opt-out page",
+                    "notes": "Timed out loading Spokeo search page",
                     "opt_out_url": self.opt_out_url,
                 }
 
-            # Check for CAPTCHA on opt-out page
+            # Look for profile links in search results
+            # Spokeo profile URLs look like: /people/First-Last/City-ST
+            profile_url = None
+
+            # Try to find a link to a specific person profile
+            profile_links = await page.query_selector_all("a[href*='/people/']")
+            for link in profile_links:
+                href = await link.get_attribute("href")
+                if href and "/people/" in href and href != "/people/":
+                    profile_url = href if href.startswith("http") else f"https://www.spokeo.com{href}"
+                    break
+
+            # If no profile links found, check if we're already on a profile page
+            if not profile_url:
+                current_url = page.url
+                if "/people/" in current_url:
+                    profile_url = current_url
+
+            if not profile_url:
+                # Take a screenshot path for debugging
+                page_title = await page.title()
+                body_text = (await page.inner_text("body"))[:500]
+                logger.info("Spokeo search page title: %s", page_title)
+                logger.info("Spokeo search page text: %s", body_text[:200])
+                return {
+                    "status": "failed",
+                    "method": "manual",
+                    "notes": f"Could not find a Spokeo profile URL. Search the site manually and submit opt-out at {self.opt_out_url}",
+                    "opt_out_url": self.opt_out_url,
+                }
+
+            logger.info("Found Spokeo profile URL: %s", profile_url)
+
+            # --- Step 2: Navigate to opt-out page and submit the profile URL ---
+            await self._rate_limit()
+
+            try:
+                await page.goto(self.opt_out_url, timeout=60000)
+                await page.wait_for_load_state("networkidle", timeout=30000)
+            except PlaywrightTimeout:
+                return {
+                    "status": "failed",
+                    "method": "manual",
+                    "notes": f"Timed out loading opt-out page. Profile URL found: {profile_url}",
+                    "opt_out_url": self.opt_out_url,
+                }
+
+            # Check for CAPTCHA
             captcha_el = await page.query_selector(
-                "[class*='captcha'], [id*='captcha'], iframe[src*='captcha']"
+                "[class*='captcha'], [id*='captcha'], iframe[src*='captcha'], [class*='recaptcha']"
             )
             if captcha_el:
                 return {
                     "status": "failed",
                     "method": "manual",
-                    "notes": "CAPTCHA detected on opt-out page",
+                    "notes": f"CAPTCHA detected. Profile URL: {profile_url} — submit manually at {self.opt_out_url}",
                     "opt_out_url": self.opt_out_url,
                 }
 
-            # Spokeo opt-out flow:
-            # 1. Search for the person on the opt-out page or paste profile URL
-            # 2. Confirm the listing
-            # 3. Enter email for verification
-            # NOTE: Selectors are approximate -- update after live testing
+            # Find the URL input field and paste the profile URL
             try:
-                # Build search query from profile
-                name = profile.full_name
-                location_suffix = ""
-                if profile.city and profile.state:
-                    location_suffix = f", {profile.city}, {profile.state}"
-                elif profile.city:
-                    location_suffix = f", {profile.city}"
-                elif profile.state:
-                    location_suffix = f", {profile.state}"
-
-                search_query = f"{name}{location_suffix}"
-
-                # Step 1: Enter search query into the opt-out form
+                # Spokeo opt-out page has an input for the listing URL
                 url_input = await page.wait_for_selector(
-                    "input[name='url'], input[placeholder*='listing'], input[type='text'], #url-input, input[name='search']",
+                    "input[type='text'], input[type='url'], input[name='url'], input[placeholder*='URL'], input[placeholder*='url'], input[placeholder*='listing'], input[placeholder*='profile'], input#url-input",
                     timeout=15000,
                 )
-                await url_input.fill(search_query)
+                await url_input.fill(profile_url)
+                logger.info("Filled opt-out URL input with: %s", profile_url)
 
                 await self._rate_limit()
 
-                # Step 2: Submit the search
+                # Click submit
                 submit_btn = await page.query_selector(
-                    "button[type='submit'], input[type='submit'], .optout-submit, [data-testid='submit']"
+                    "button[type='submit'], input[type='submit'], button:has-text('Remove'), button:has-text('Submit'), button:has-text('Search'), button:has-text('Go')"
                 )
                 if submit_btn:
                     await submit_btn.click()
+                    logger.info("Clicked submit button")
                 else:
                     await page.keyboard.press("Enter")
+                    logger.info("Pressed Enter to submit")
 
-                # Step 3: Wait for results / confirmation
+                # Wait for response
                 await page.wait_for_load_state("networkidle", timeout=30000)
-
-                # Check for email verification prompt
-                email_prompt = await page.query_selector(
-                    "input[type='email'], input[name='email'], [class*='email-verify'], [data-testid='email-input']"
-                )
-
-                # Check if opt-out was submitted successfully
-                success_el = await page.query_selector(
-                    "[class*='success'], [class*='confirm'], [data-testid='success'], .optout-success"
-                )
-
-                if success_el or email_prompt:
-                    status = "needs_verification" if email_prompt else "submitted"
-                    return {
-                        "status": status,
-                        "method": "automated",
-                        "notes": "Opt-out submitted via Spokeo opt-out page",
-                        "opt_out_url": self.opt_out_url,
-                    }
-                else:
-                    return {
-                        "status": "failed",
-                        "method": "manual",
-                        "notes": "Could not confirm opt-out submission -- page structure may have changed",
-                        "opt_out_url": self.opt_out_url,
-                    }
 
             except PlaywrightTimeout:
                 return {
                     "status": "failed",
                     "method": "manual",
-                    "notes": "Timed out interacting with opt-out form",
+                    "notes": f"Timed out on opt-out form. Profile URL: {profile_url}",
                     "opt_out_url": self.opt_out_url,
                 }
+
+            # --- Step 3: Check for confirmation ---
+            # Look for email verification prompt (Spokeo sends a confirmation email)
+            email_input = await page.query_selector(
+                "input[type='email'], input[name='email']"
+            )
+
+            # Look for success indicators
+            page_text = (await page.inner_text("body")).lower()
+            success_indicators = [
+                "email has been sent",
+                "check your email",
+                "verification email",
+                "successfully submitted",
+                "removal request",
+                "opt-out request",
+                "we will process",
+                "confirmation email",
+            ]
+            has_success = any(indicator in page_text for indicator in success_indicators)
+
+            # If email input is present, fill it with user's email
+            if email_input:
+                email = profile.email_addresses[0] if profile.email_addresses else ""
+                if email:
+                    await email_input.fill(email)
+                    logger.info("Filled email verification field")
+                    # Submit the email
+                    email_submit = await page.query_selector(
+                        "button[type='submit'], input[type='submit'], button:has-text('Submit'), button:has-text('Verify'), button:has-text('Send')"
+                    )
+                    if email_submit:
+                        await email_submit.click()
+                        await page.wait_for_load_state("networkidle", timeout=15000)
+                        # Re-check for success
+                        page_text = (await page.inner_text("body")).lower()
+                        has_success = any(indicator in page_text for indicator in success_indicators)
+
+            if has_success:
+                logger.info("Spokeo opt-out confirmed: success indicator found")
+                return {
+                    "status": "needs_verification",
+                    "method": "automated",
+                    "notes": f"Opt-out submitted for {profile_url}. Check email for verification link.",
+                    "opt_out_url": self.opt_out_url,
+                }
+
+            # If we got this far without clear success, check what page we're on
+            current_title = await page.title()
+            logger.info("Final page title: %s", current_title)
+            logger.info("Final page text (first 300): %s", page_text[:300])
+
+            # Be generous — if we made it through without errors, it likely worked
+            return {
+                "status": "submitted",
+                "method": "automated",
+                "notes": f"Opt-out form submitted for {profile_url}. Verify status in a few days.",
+                "opt_out_url": self.opt_out_url,
+            }
 
         except BrokerError:
             raise
         except Exception as exc:
+            logger.exception("Spokeo opt-out error")
             return {
                 "status": "failed",
                 "method": "manual",

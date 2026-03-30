@@ -22,6 +22,7 @@ class RemovalRequestResponse(BaseModel):
     recheck_after: Optional[datetime]
     attempts: int
     last_error: Optional[str]
+    notes: Optional[str]
     live_view_url: Optional[str]
     created_at: datetime
 
