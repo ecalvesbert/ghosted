@@ -9,7 +9,7 @@ import { Nav } from "@/components/nav";
 
 const BROKERS = [
   { slug: "spokeo", name: "Spokeo", url: "spokeo.com", active: true },
-  { slug: "whitepages", name: "Whitepages", url: "whitepages.com", active: false },
+  { slug: "whitepages", name: "Whitepages", url: "whitepages.com", active: true },
   { slug: "beenverified", name: "BeenVerified", url: "beenverified.com", active: false },
   { slug: "intelius", name: "Intelius", url: "intelius.com", active: false },
   { slug: "peoplefinder", name: "PeopleFinder", url: "peoplefinder.com", active: false },
