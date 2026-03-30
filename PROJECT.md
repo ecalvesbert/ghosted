@@ -34,27 +34,31 @@ Searches the major people-search and data broker sites for your personal informa
 | Phase | Description |
 |---|---|
 | 0 | GitHub repo, PLANNING.md, CONTRACTS.md, gap analysis |
+| 1 | Foundation — FastAPI backend, Next.js 16 frontend, Alembic, Fernet encryption, JWT auth, Celery |
+| 2 | Spokeo adapter — search, submit_removal, verify_removal via Browserbase + Playwright |
+| 3 | Scan engine — sequential execution, live progress, 1-scan-per-user limit, Celery tasks |
+| 4 | Review UI — listing cards with priority indicators, approve/skip flow, submit-all |
+| 5 | Removal engine — Celery tasks for submission + verification, manual fallback |
+| 6 | Status tracking — summary endpoint, stale detection, recheck-all, dashboard card |
+| 7 | Notifications — Telegram alerts on scan complete, removal confirmed/failed |
+| 8 | Hardening — race condition fixes, auth fixes, error format compliance, security audit |
 
-### 🔲 Remaining Phases
+### 🔲 Remaining
 
-| Phase | Description |
+| Item | Description |
 |---|---|
-| 1 | Foundation — scaffold, Alembic, CI, Browserbase, Railway Pro + Vercel, encrypted user profiles, admin bootstrap |
-| 2 | Broker adapters — Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder (sequential, with timeouts + rate limits) |
-| 3 | Scan engine — sequential execution, live progress, 1-scan-per-user limit, results to PostgreSQL |
-| 4 | Review UI — findings sorted by priority, approve/skip per listing |
-| 5 | Removal engine — submit opt-out for approved listings, Celery tasks persisted in Postgres |
-| 6 | Status tracking — re-check removed listings, confirm deletion |
-| 7 | Notifications — Telegram alert on scan complete / removal confirmed |
-| 8 | Hardening — more brokers, ENCRYPTION_KEY rotation utility, manual fallbacks |
+| Deploy | Backend to Railway Pro, frontend to Vercel, env vars, Alembic migration |
+| Live test | Test Spokeo adapter against live site, tune CSS selectors |
+| Tier 2 brokers | Whitepages, BeenVerified, Intelius, PeopleFinder adapters |
+| ENCRYPTION_KEY rotation | Utility to re-encrypt all PII with a new key |
 
 ---
 
 ## 🔜 Next Steps
 
-1. **Scaffold Phase 1** — monorepo structure, encrypted user profile model, CI, Browserbase integration
-2. **Research Tier 1 broker opt-out flows** — map each site's removal process before writing adapters
-3. **Implement broker adapters** (Phase 2) — Spokeo first as the reference implementation
+1. **Deploy** — Railway Pro (backend + Postgres + Redis) + Vercel (frontend), set all env vars
+2. **Live test Spokeo** — run against real site, fix selectors, handle edge cases
+3. **Add more brokers** — Whitepages next, then BeenVerified, Intelius, PeopleFinder
 
 ---
 
