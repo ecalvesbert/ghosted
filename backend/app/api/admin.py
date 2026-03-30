@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import UserProfile
 from app.models.invite import InviteCode
+from app.models.scan import ScanJob
 from app.schemas.auth import BootstrapRequest
 from app.schemas.invite import InviteCreateRequest, InviteCodeResponse
 from app.services.auth import hash_password, create_token, get_admin_user
@@ -81,6 +82,22 @@ def list_invites(
     db: Session = Depends(get_db),
 ):
     return db.query(InviteCode).all()
+
+
+@router.post("/scans/{scan_id}/cancel")
+def cancel_scan(
+    scan_id: str,
+    admin: UserProfile = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    scan = db.query(ScanJob).filter(ScanJob.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found", headers={"code": "NOT_FOUND"})
+    scan.status = "failed"
+    scan.error = "Cancelled by admin"
+    scan.completed_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"status": "cancelled"}
 
 
 @router.get("/brokers")
