@@ -7,6 +7,14 @@ import { scans, removals as removalsApi, profile as profileApi, type ScanJob, ty
 import { Button, Card, Badge } from "@/components/ui";
 import { Nav } from "@/components/nav";
 
+const BROKER_INFO: Record<string, { name: string; url: string }> = {
+  spokeo: { name: "Spokeo", url: "spokeo.com" },
+  whitepages: { name: "Whitepages", url: "whitepages.com" },
+  beenverified: { name: "BeenVerified", url: "beenverified.com" },
+  intelius: { name: "Intelius", url: "intelius.com" },
+  peoplefinder: { name: "PeopleFinder", url: "peoplefinder.com" },
+};
+
 function statusBadge(status: string) {
   const map: Record<string, "default" | "success" | "warning" | "destructive"> = {
     pending: "default",
@@ -122,11 +130,30 @@ export default function DashboardPage() {
                     </div>
                     {statusBadge(scan.status)}
                   </div>
-                  <div className="mt-1 text-sm flex gap-4">
-                    <span>{scan.listings_found} listings found</span>
-                    <span className="text-[var(--muted-foreground)]">
-                      {scan.brokers_completed.length}/{scan.brokers_targeted.length} brokers
-                    </span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {scan.brokers_targeted.map((slug) => {
+                      const info = BROKER_INFO[slug] || { name: slug, url: slug };
+                      const completed = scan.brokers_completed.includes(slug);
+                      const failed = scan.brokers_failed.includes(slug);
+                      return (
+                        <span
+                          key={slug}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                            failed
+                              ? "border-red-500/30 text-red-400"
+                              : completed
+                              ? "border-emerald-500/30 text-emerald-400"
+                              : "border-[var(--border)] text-[var(--muted-foreground)]"
+                          }`}
+                        >
+                          {info.name}
+                          <span className="text-[10px] opacity-60">{info.url}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    {scan.listings_found} listings found
                   </div>
                 </button>
               ))}
