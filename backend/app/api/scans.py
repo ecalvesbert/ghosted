@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -9,7 +9,7 @@ from app.models.listing import FoundListing
 from app.schemas.scan import ScanCreateRequest, ScanJobResponse
 from app.schemas.listing import FoundListingResponse
 from app.services.auth import get_current_user
-from app.tasks.scan_task import run_scan
+from app.services.scan_engine import run_scan_sync
 
 router = APIRouter(prefix="/api/scans", tags=["scans"])
 
@@ -19,6 +19,7 @@ DEFAULT_BROKERS = ["spokeo"]
 @router.post("", response_model=ScanJobResponse, status_code=201)
 def create_scan(
     req: ScanCreateRequest,
+    background_tasks: BackgroundTasks,
     current_user: UserProfile = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -45,8 +46,8 @@ def create_scan(
     db.commit()
     db.refresh(scan)
 
-    # Dispatch Celery task
-    run_scan.delay(str(scan.id), str(current_user.id), brokers)
+    # Run scan in background thread (no Celery worker needed)
+    background_tasks.add_task(run_scan_sync, str(scan.id), str(current_user.id), brokers)
 
     return scan
 
