@@ -64,9 +64,7 @@ export default function DashboardPage() {
       removalsApi.batches(token).then(setBatches).catch(() => {});
       removalsApi.summary(token).then(setSummary).catch(() => {});
       profileApi.get(token).then((p) => {
-        setProfileComplete(
-          !!p.full_name && p.phone_numbers.length > 0 && p.email_addresses.length > 0 && !!p.city && !!p.state
-        );
+        setProfileComplete(!!p.full_name);
       }).catch(() => {});
     }
   }, [token]);
@@ -128,7 +126,7 @@ export default function DashboardPage() {
 
         {!profileComplete && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, email, city, and state are required) before submitting removals.
+            Add your <a href="/profile" className="underline font-medium">full name</a> to your profile before submitting removals.
           </div>
         )}
 
@@ -185,6 +183,9 @@ export default function DashboardPage() {
                 </label>
               ))}
             </div>
+            <p className="mt-3 text-xs text-[var(--muted-foreground)]">
+              A live browser session will open for each site. If any fields are missing from your profile, you can enter them directly in the browser.
+            </p>
             <div className="mt-4 flex items-center justify-between">
               <span className="text-sm text-[var(--muted-foreground)]">
                 {selectedBrokers.size} site{selectedBrokers.size !== 1 ? "s" : ""} selected
