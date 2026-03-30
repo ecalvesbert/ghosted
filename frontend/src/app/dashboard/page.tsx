@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { scans, removals as removalsApi, type ScanJob, type RemovalSummary, ApiError } from "@/lib/api";
+import { scans, removals as removalsApi, profile as profileApi, type ScanJob, type RemovalSummary, ApiError } from "@/lib/api";
 import { Button, Card, Badge } from "@/components/ui";
 import { Nav } from "@/components/nav";
 
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [removalSummary, setRemovalSummary] = useState<RemovalSummary | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [profileComplete, setProfileComplete] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +34,11 @@ export default function DashboardPage() {
     if (token) {
       scans.list(token).then(setScanList).catch(() => {});
       removalsApi.summary(token).then(setRemovalSummary).catch(() => {});
+      profileApi.get(token).then((p) => {
+        setProfileComplete(
+          !!p.full_name && p.phone_numbers.length > 0 && p.email_addresses.length > 0
+        );
+      }).catch(() => {});
     }
   }, [token]);
 
@@ -62,10 +68,16 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-4xl p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button size="sm" onClick={startScan} disabled={creating}>
+          <Button size="sm" onClick={startScan} disabled={creating || !profileComplete}>
             {creating ? "Starting..." : "New Scan"}
           </Button>
         </div>
+
+        {!profileComplete && (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, and email are required) before starting a scan.
+          </div>
+        )}
 
         {error && (
           <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">

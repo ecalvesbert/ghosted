@@ -56,7 +56,7 @@ export default function ProfilePage() {
         telegram_chat_id: telegramChatId || undefined,
       });
       setProfileData(updated);
-      setMessage("Profile saved.");
+      setMessage(`Saved as of ${new Date().toLocaleString()}`);
     } catch {
       setMessage("Failed to save profile.");
     } finally {
@@ -74,9 +74,9 @@ export default function ProfilePage() {
 
       <Card>
         <form onSubmit={handleSave} className="space-y-4">
-          <Input id="fullName" label="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-          <Input id="phones" label="Phone Numbers (comma-separated)" value={phones} onChange={(e) => setPhones(e.target.value)} />
-          <Input id="emails" label="Email Addresses (comma-separated)" value={emails} onChange={(e) => setEmails(e.target.value)} />
+          <Input id="fullName" label="Full Name *" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+          <Input id="phones" label="Phone Numbers * (comma-separated)" value={phones} onChange={(e) => setPhones(e.target.value)} required />
+          <Input id="emails" label="Email Addresses * (comma-separated)" value={emails} onChange={(e) => setEmails(e.target.value)} required />
           <div className="space-y-1.5">
             <label htmlFor="addresses" className="text-sm text-[var(--muted-foreground)]">Addresses (one per line)</label>
             <textarea
