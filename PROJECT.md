@@ -33,21 +33,20 @@ Searches the major people-search and data broker sites for your personal informa
 
 | Phase | Description |
 |---|---|
-| 0 | GitHub repo created, PLANNING.md written |
+| 0 | GitHub repo, PLANNING.md, CONTRACTS.md, gap analysis |
 
 ### 🔲 Remaining Phases
 
 | Phase | Description |
 |---|---|
-| 1 | Foundation — scaffold, CI, Docker, encrypted user profiles |
-| 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) |
-| 3 | Scan engine — search each broker, return found listings |
-| 4 | Review UI — show findings, user approves/skips per listing |
-| 5 | Removal engine — submit opt-out for approved listings |
-| 6 | Status tracking — re-check, confirm deletion |
-| 7 | Notifications — Telegram alerts |
-| 8 | Hosting — Railway + Vercel |
-| 9 | Hardening — more brokers, CAPTCHA handling, manual fallbacks |
+| 1 | Foundation — scaffold, Alembic, CI, Browserbase, Railway Pro + Vercel, encrypted user profiles, admin bootstrap |
+| 2 | Broker adapters — Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder (sequential, with timeouts + rate limits) |
+| 3 | Scan engine — sequential execution, live progress, 1-scan-per-user limit, results to PostgreSQL |
+| 4 | Review UI — findings sorted by priority, approve/skip per listing |
+| 5 | Removal engine — submit opt-out for approved listings, Celery tasks persisted in Postgres |
+| 6 | Status tracking — re-check removed listings, confirm deletion |
+| 7 | Notifications — Telegram alert on scan complete / removal confirmed |
+| 8 | Hardening — more brokers, ENCRYPTION_KEY rotation utility, manual fallbacks |
 
 ---
 

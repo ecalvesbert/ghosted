@@ -87,8 +87,8 @@ Phone and email removal first. Name/address as secondary.
 |---|---|---|---|
 | 0 | GitHub repo creation, PLANNING.md, CONTRACTS.md | Done | ✅ |
 | 1 | Foundation — scaffold, Alembic migrations, CI, Browserbase integration, Railway Pro + Vercel wired up, encrypted user profiles, admin bootstrap | 2 days | 🔲 |
-| 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) — concurrent, with timeouts + rate limits | 3 days | 🔲 |
-| 3 | Scan engine — concurrent broker execution, 1-scan-per-user limit, results to PostgreSQL | 2 days | 🔲 |
+| 2 | Broker adapters (Spokeo, Whitepages, BeenVerified, Intelius, PeopleFinder) — sequential, with timeouts + rate limits | 3 days | 🔲 |
+| 3 | Scan engine — sequential broker execution, live progress, 1-scan-per-user limit, results to PostgreSQL | 2 days | 🔲 |
 | 4 | Review UI — show findings, approve/skip per listing | 2 days | 🔲 |
 | 5 | Removal engine — submit opt-out for approved listings, Celery tasks persisted in Postgres | 2 days | 🔲 |
 | 6 | Status tracking — re-check removed listings, confirm deletion | 1 day | 🔲 |
