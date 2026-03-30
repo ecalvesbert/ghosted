@@ -7,13 +7,30 @@ import { scans, removals as removalsApi, profile as profileApi, type ScanJob, ty
 import { Button, Card, Badge } from "@/components/ui";
 import { Nav } from "@/components/nav";
 
-const BROKER_INFO: Record<string, { name: string; url: string }> = {
-  spokeo: { name: "Spokeo", url: "spokeo.com" },
-  whitepages: { name: "Whitepages", url: "whitepages.com" },
-  beenverified: { name: "BeenVerified", url: "beenverified.com" },
-  intelius: { name: "Intelius", url: "intelius.com" },
-  peoplefinder: { name: "PeopleFinder", url: "peoplefinder.com" },
-};
+const BROKERS = [
+  { slug: "spokeo", name: "Spokeo", url: "spokeo.com", active: true },
+  { slug: "whitepages", name: "Whitepages", url: "whitepages.com", active: false },
+  { slug: "beenverified", name: "BeenVerified", url: "beenverified.com", active: false },
+  { slug: "intelius", name: "Intelius", url: "intelius.com", active: false },
+  { slug: "peoplefinder", name: "PeopleFinder", url: "peoplefinder.com", active: false },
+  { slug: "truepeoplesearch", name: "TruePeopleSearch", url: "truepeoplesearch.com", active: false },
+  { slug: "fastpeoplesearch", name: "FastPeopleSearch", url: "fastpeoplesearch.com", active: false },
+  { slug: "thatsthem", name: "ThatsThem", url: "thatsthem.com", active: false },
+  { slug: "radaris", name: "Radaris", url: "radaris.com", active: false },
+  { slug: "mylife", name: "MyLife", url: "mylife.com", active: false },
+  { slug: "ussearch", name: "USSearch", url: "ussearch.com", active: false },
+  { slug: "peekyou", name: "PeekYou", url: "peekyou.com", active: false },
+  { slug: "instantcheckmate", name: "Instant Checkmate", url: "instantcheckmate.com", active: false },
+  { slug: "usphonebook", name: "USPhoneBook", url: "usphonebook.com", active: false },
+  { slug: "anywho", name: "AnyWho", url: "anywho.com", active: false },
+  { slug: "addresses", name: "Addresses.com", url: "addresses.com", active: false },
+  { slug: "cyberbackgroundchecks", name: "CyberBackgroundChecks", url: "cyberbackgroundchecks.com", active: false },
+  { slug: "familytreenow", name: "FamilyTreeNow", url: "familytreenow.com", active: false },
+  { slug: "nuwber", name: "Nuwber", url: "nuwber.com", active: false },
+  { slug: "cocofinder", name: "CocoFinder", url: "cocofinder.com", active: false },
+];
+
+const BROKER_MAP = Object.fromEntries(BROKERS.map((b) => [b.slug, b]));
 
 function statusBadge(status: string) {
   const map: Record<string, "default" | "success" | "warning" | "destructive"> = {
@@ -32,6 +49,10 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [profileComplete, setProfileComplete] = useState(false);
+  const [showBrokerSelect, setShowBrokerSelect] = useState(false);
+  const [selectedBrokers, setSelectedBrokers] = useState<Set<string>>(
+    new Set(BROKERS.filter((b) => b.active).map((b) => b.slug))
+  );
   const router = useRouter();
 
   useEffect(() => {
@@ -50,12 +71,30 @@ export default function DashboardPage() {
     }
   }, [token]);
 
+  function toggleBroker(slug: string) {
+    setSelectedBrokers((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedBrokers(new Set(BROKERS.filter((b) => b.active).map((b) => b.slug)));
+  }
+
+  function selectNone() {
+    setSelectedBrokers(new Set());
+  }
+
   async function startScan() {
-    if (!token) return;
+    if (!token || selectedBrokers.size === 0) return;
     setCreating(true);
     setError("");
     try {
-      const scan = await scans.create(token);
+      const scan = await scans.create(token, Array.from(selectedBrokers));
+      setShowBrokerSelect(false);
       router.push(`/scan/${scan.id}`);
     } catch (e) {
       if (e instanceof ApiError && e.code === "SCAN_ALREADY_RUNNING") {
@@ -76,8 +115,12 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-4xl p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button size="sm" onClick={startScan} disabled={creating || !profileComplete}>
-            {creating ? "Starting..." : "New Scan"}
+          <Button
+            size="sm"
+            onClick={() => setShowBrokerSelect(!showBrokerSelect)}
+            disabled={!profileComplete}
+          >
+            New Scan
           </Button>
         </div>
 
@@ -91,6 +134,69 @@ export default function DashboardPage() {
           <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
+        )}
+
+        {/* Broker selection panel */}
+        {showBrokerSelect && (
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Select Sites to Scan</h2>
+              <div className="flex gap-2 text-xs">
+                <button onClick={selectAll} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline">
+                  Select active
+                </button>
+                <button onClick={selectNone} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline">
+                  Clear
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {BROKERS.map((broker) => (
+                <label
+                  key={broker.slug}
+                  className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
+                    !broker.active
+                      ? "border-[var(--border)] opacity-50 cursor-not-allowed"
+                      : selectedBrokers.has(broker.slug)
+                      ? "border-emerald-500/50 bg-emerald-500/5"
+                      : "border-[var(--border)] hover:bg-[var(--accent)]"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedBrokers.has(broker.slug)}
+                    onChange={() => toggleBroker(broker.slug)}
+                    disabled={!broker.active}
+                    className="rounded border-[var(--border)] accent-emerald-500"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      {broker.name}
+                      {!broker.active && (
+                        <span className="text-[10px] rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[var(--muted-foreground)]">
+                          coming soon
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--muted-foreground)]">{broker.url}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm text-[var(--muted-foreground)]">
+                {selectedBrokers.size} site{selectedBrokers.size !== 1 ? "s" : ""} selected
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setShowBrokerSelect(false)}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={startScan} disabled={creating || selectedBrokers.size === 0}>
+                  {creating ? "Starting..." : "Start Scan"}
+                </Button>
+              </div>
+            </div>
+          </Card>
         )}
 
         {/* Removal status summary */}
@@ -132,7 +238,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {scan.brokers_targeted.map((slug) => {
-                      const info = BROKER_INFO[slug] || { name: slug, url: slug };
+                      const info = BROKER_MAP[slug] || { name: slug, url: slug };
                       const completed = scan.brokers_completed.includes(slug);
                       const failed = scan.brokers_failed.includes(slug);
                       return (
