@@ -33,7 +33,7 @@ Phone and email removal first. Name/address as secondary.
 
 | Layer | Choice | Why | Cost |
 |---|---|---|---|
-| Frontend | Next.js + TypeScript + Tailwind | Proven stack, dark theme, fast | Free (Vercel) |
+| Frontend | Next.js 16 + TypeScript + Tailwind | Latest App Router, dark theme, fast | Free (Vercel) |
 | Backend | Python + FastAPI | Async, fits automation workflows | Free (Railway) |
 | Database | PostgreSQL | User profiles, scan results, removal history | Free tier (Railway) |
 | Browser automation | Playwright via Browserbase | Managed Chromium — no local browser, stealth/proxy built in | Free tier + pay-per-use |

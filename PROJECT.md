@@ -16,7 +16,7 @@ Searches the major people-search and data broker sites for your personal informa
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js + TypeScript + Tailwind (dark theme) |
+| Frontend | Next.js 16 + TypeScript + Tailwind (dark theme) |
 | Backend | Python + FastAPI |
 | Database | PostgreSQL |
 | Browser automation | Browserbase + Playwright SDK (managed Chromium, stealth/proxy) |
@@ -52,7 +52,7 @@ Searches the major people-search and data broker sites for your personal informa
 
 ## 🔜 Next Steps
 
-1. **Scaffold Phase 1** — monorepo structure, encrypted user profile model, CI, Docker
+1. **Scaffold Phase 1** — monorepo structure, encrypted user profile model, CI, Browserbase integration
 2. **Research Tier 1 broker opt-out flows** — map each site's removal process before writing adapters
 3. **Implement broker adapters** (Phase 2) — Spokeo first as the reference implementation
 
@@ -79,7 +79,7 @@ None yet — project just started.
 ```
 User provides: name, email, phone, address (encrypted at rest)
                     ↓
-         Scan engine → Playwright adapters → Broker sites
+         Scan engine → Playwright via Browserbase → Broker sites
                     ↓
          Found listings returned → Review UI
                     ↓

@@ -68,7 +68,7 @@ User provides PII (encrypted at rest)
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 14 + TypeScript + Tailwind |
+| Frontend | Next.js 16 + TypeScript + Tailwind |
 | Backend | Python + FastAPI |
 | Database | PostgreSQL + Alembic |
 | Browser automation | Playwright + `browserbase` Python SDK (managed Chromium) |
