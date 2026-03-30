@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Callable, Optional, Literal
 
 from app.services.encryption import DecryptedProfile
-from app.models.listing import FoundListing
-from app.models.removal import RemovalRequest
 
 
 class BrokerError(Exception):
@@ -30,13 +28,13 @@ class BrokerAdapter(ABC):
     requires_email_verify: bool = False
 
     @abstractmethod
-    async def search(self, profile: DecryptedProfile, on_session_created: Callable[[str], None] | None = None) -> list[FoundListing]:
-        ...
-
-    @abstractmethod
-    async def submit_removal(self, listing: FoundListing) -> RemovalRequest:
-        ...
-
-    @abstractmethod
-    async def verify_removal(self, request: RemovalRequest) -> RemovalRequest:
+    async def submit_opt_out(
+        self,
+        profile: DecryptedProfile,
+        on_session_created: Callable[[str], None] | None = None,
+    ) -> dict:
+        """
+        Navigate to opt-out page, fill form, submit.
+        Returns dict with keys: status, method, notes, opt_out_url (optional).
+        """
         ...

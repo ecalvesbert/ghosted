@@ -43,14 +43,9 @@ export interface UserPublic {
   updated_at: string;
 }
 
-export interface AuthResponse {
-  token: string;
-  user: UserPublic;
-}
-
 export const auth = {
   register: (email: string, password: string, invite_code: string) =>
-    request<AuthResponse>("/api/auth/register", { method: "POST", body: { email, password, invite_code } }),
+    request<{ token: string }>("/api/auth/register", { method: "POST", body: { email, password, invite_code } }),
   login: (email: string, password: string) =>
     request<{ token: string }>("/api/auth/token", { method: "POST", body: { email, password } }),
   me: (token: string) =>
@@ -94,97 +89,62 @@ export const profile = {
     request<UserProfile>("/api/profile", { method: "PUT", body: data, token }),
 };
 
-// --- Scans ---
+// --- Removals ---
 
-export interface ScanJob {
+export interface RemovalBatch {
   id: string;
   user_id: string;
   status: string;
   brokers_targeted: string[];
   brokers_completed: string[];
   brokers_failed: string[];
-  listings_found: number;
-  started_at: string | null;
+  total_removals: number;
+  created_at: string;
   completed_at: string | null;
-  error: string | null;
-  live_view_url: string | null;
-  created_at: string;
 }
-
-export interface FoundListing {
-  id: string;
-  scan_job_id: string;
-  user_id: string;
-  broker: string;
-  listing_url: string;
-  name_on_listing: string;
-  phones: string[];
-  emails: string[];
-  addresses: string[];
-  age: string | null;
-  relatives: string[];
-  priority: number;
-  status: string;
-  removal_method: string | null;
-  manual_instructions: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export const scans = {
-  create: (token: string, brokers?: string[]) =>
-    request<ScanJob>("/api/scans", { method: "POST", body: { brokers }, token }),
-  list: (token: string) =>
-    request<ScanJob[]>("/api/scans", { token }),
-  get: (token: string, id: string) =>
-    request<ScanJob>(`/api/scans/${id}`, { token }),
-  listings: (token: string, id: string) =>
-    request<FoundListing[]>(`/api/scans/${id}/listings`, { token }),
-};
-
-// --- Listings ---
-
-export const listings = {
-  update: (token: string, id: string, status: "approved" | "skipped") =>
-    request<FoundListing>(`/api/listings/${id}`, { method: "PATCH", body: { status }, token }),
-  remove: (token: string, id: string) =>
-    request<RemovalRequest>(`/api/listings/${id}/remove`, { method: "POST", token }),
-};
-
-// --- Removals ---
 
 export interface RemovalRequest {
   id: string;
-  listing_id: string;
   user_id: string;
+  batch_id: string | null;
   broker: string;
-  method: string;
+  status: string;
+  method: string | null;
+  opt_out_url: string | null;
   submitted_at: string | null;
   confirmed_at: string | null;
   recheck_after: string | null;
   attempts: number;
   last_error: string | null;
-  status: string;
+  live_view_url: string | null;
+  created_at: string;
 }
 
 export interface RemovalSummary {
   total: number;
   pending: number;
+  in_progress: number;
+  submitted: number;
+  needs_verification: number;
   confirmed: number;
   failed: number;
 }
 
 export const removals = {
+  create: (token: string, brokers: string[]) =>
+    request<RemovalBatch>("/api/removals", { method: "POST", body: { brokers }, token }),
   list: (token: string) =>
     request<RemovalRequest[]>("/api/removals", { token }),
+  batches: (token: string) =>
+    request<RemovalBatch[]>("/api/removals/batches", { token }),
+  batch: (token: string, id: string) =>
+    request<RemovalBatch>(`/api/removals/batches/${id}`, { token }),
+  summary: (token: string) =>
+    request<RemovalSummary>("/api/removals/summary", { token }),
   get: (token: string, id: string) =>
     request<RemovalRequest>(`/api/removals/${id}`, { token }),
   recheck: (token: string, id: string) =>
     request<RemovalRequest>(`/api/removals/${id}/recheck`, { method: "POST", token }),
-  summary: (token: string) =>
-    request<RemovalSummary>("/api/removals/summary", { token }),
-  recheckStale: (token: string) =>
-    request<RemovalRequest[]>("/api/removals/recheck-stale", { method: "POST", token }),
 };
 
 // --- Admin ---
@@ -196,6 +156,4 @@ export const admin = {
     request<{ code: string }>("/api/admin/invites", { method: "POST", body: { expires_in_days }, token }),
   listInvites: (token: string) =>
     request<Array<{ code: string; created_by: string; used_by: string | null; is_used: boolean; expires_at: string | null }>>("/api/admin/invites", { token }),
-  listBrokers: (token: string) =>
-    request<Array<{ slug: string; display_name: string; status: string }>>("/api/admin/brokers", { token }),
 };

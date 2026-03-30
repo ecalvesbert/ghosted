@@ -3,7 +3,7 @@ Telegram Bot API notification service.
 
 Sends notifications via the Telegram Bot API using httpx.
 Silently skips if telegram is not configured (no token or no chat_id).
-Never logs PII content — only logs delivery status.
+Never logs PII content -- only logs delivery status.
 """
 
 import logging
@@ -40,35 +40,34 @@ async def send_notification(chat_id: str, message: str) -> None:
         logger.exception("Failed to send Telegram notification (chat id redacted)")
 
 
-async def send_scan_complete(chat_id: str, scan_job) -> None:
-    """Notify user that a scan has completed."""
-    brokers_completed = scan_job.brokers_completed or []
-    listings_found = scan_job.listings_found or 0
-    broker_count = len(brokers_completed)
-    broker_label = "broker" if broker_count == 1 else "brokers"
+async def send_batch_complete(chat_id: str, batch) -> None:
+    """Notify user that a removal batch has completed."""
+    completed = len(batch.brokers_completed or [])
+    failed = len(batch.brokers_failed or [])
+    total = batch.total_removals or 0
 
     message = (
-        f"\U0001f50d Scan complete! Found {listings_found} listing"
-        f"{'s' if listings_found != 1 else ''} across {broker_count} {broker_label}. "
-        f"Review them now."
+        f"\u2705 Removal batch complete! "
+        f"Submitted {total} opt-out request{'s' if total != 1 else ''} "
+        f"across {completed} broker{'s' if completed != 1 else ''}."
     )
+    if failed > 0:
+        message += f" {failed} broker{'s' if failed != 1 else ''} failed."
+
     await send_notification(chat_id, message)
 
 
-async def send_removal_confirmed(chat_id: str, listing) -> None:
-    """Notify user that a listing removal has been confirmed."""
-    message = (
-        f"\u2705 Removal confirmed: {listing.broker} listing "
-        f"for {listing.name_on_listing} has been removed."
-    )
+async def send_removal_confirmed(chat_id: str, broker: str) -> None:
+    """Notify user that a removal has been confirmed."""
+    message = f"\u2705 Removal confirmed: your opt-out from {broker} has been verified."
     await send_notification(chat_id, message)
 
 
-async def send_removal_failed(chat_id: str, listing, error: str = "") -> None:
-    """Notify user that a listing removal has failed."""
+async def send_removal_failed(chat_id: str, broker: str, error: str = "") -> None:
+    """Notify user that a removal has failed."""
     error_part = f" \u2014 {error}" if error else ""
     message = (
-        f"\u26a0\ufe0f Removal failed: {listing.broker}{error_part}. "
+        f"\u26a0\ufe0f Removal failed: {broker}{error_part}. "
         f"Manual steps may be needed."
     )
     await send_notification(chat_id, message)

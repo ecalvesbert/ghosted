@@ -36,3 +36,4 @@ status/*.probe
 
 # Keep the status dir itself
 !status/.gitkeep
+.vercel

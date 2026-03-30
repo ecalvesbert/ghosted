@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { scans, removals as removalsApi, profile as profileApi, type ScanJob, type RemovalSummary, ApiError } from "@/lib/api";
+import { removals as removalsApi, profile as profileApi, type RemovalBatch, type RemovalSummary, ApiError } from "@/lib/api";
 import { Button, Card, Badge } from "@/components/ui";
 import { Nav } from "@/components/nav";
 
@@ -44,8 +44,9 @@ function statusBadge(status: string) {
 
 export default function DashboardPage() {
   const { token, loading: authLoading } = useAuth();
-  const [scanList, setScanList] = useState<ScanJob[]>([]);
-  const [removalSummary, setRemovalSummary] = useState<RemovalSummary | null>(null);
+  const router = useRouter();
+  const [batches, setBatches] = useState<RemovalBatch[]>([]);
+  const [summary, setSummary] = useState<RemovalSummary | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [profileComplete, setProfileComplete] = useState(false);
@@ -53,7 +54,6 @@ export default function DashboardPage() {
   const [selectedBrokers, setSelectedBrokers] = useState<Set<string>>(
     new Set(BROKERS.filter((b) => b.active).map((b) => b.slug))
   );
-  const router = useRouter();
 
   useEffect(() => {
     if (!authLoading && !token) router.push("/login");
@@ -61,8 +61,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (token) {
-      scans.list(token).then(setScanList).catch(() => {});
-      removalsApi.summary(token).then(setRemovalSummary).catch(() => {});
+      removalsApi.batches(token).then(setBatches).catch(() => {});
+      removalsApi.summary(token).then(setSummary).catch(() => {});
       profileApi.get(token).then((p) => {
         setProfileComplete(
           !!p.full_name && p.phone_numbers.length > 0 && p.email_addresses.length > 0 && !!p.city && !!p.state
@@ -88,19 +88,19 @@ export default function DashboardPage() {
     setSelectedBrokers(new Set());
   }
 
-  async function startScan() {
+  async function startRemovals() {
     if (!token || selectedBrokers.size === 0) return;
     setCreating(true);
     setError("");
     try {
-      const scan = await scans.create(token, Array.from(selectedBrokers));
+      const batch = await removalsApi.create(token, Array.from(selectedBrokers));
       setShowBrokerSelect(false);
-      router.push(`/scan/${scan.id}`);
+      router.push(`/removals/${batch.id}`);
     } catch (e) {
-      if (e instanceof ApiError && e.code === "SCAN_ALREADY_RUNNING") {
-        setError("A scan is already running. Wait for it to finish before starting a new one.");
+      if (e instanceof ApiError && e.code === "BATCH_ALREADY_RUNNING") {
+        setError("A removal batch is already running. Wait for it to finish.");
       } else {
-        setError("Failed to start scan.");
+        setError("Failed to start removals.");
       }
     } finally {
       setCreating(false);
@@ -108,6 +108,8 @@ export default function DashboardPage() {
   }
 
   if (authLoading || !token) return null;
+
+  const hasActivity = summary && summary.total > 0;
 
   return (
     <div>
@@ -120,13 +122,13 @@ export default function DashboardPage() {
             onClick={() => setShowBrokerSelect(!showBrokerSelect)}
             disabled={!profileComplete}
           >
-            New Scan
+            Submit Removals
           </Button>
         </div>
 
         {!profileComplete && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, email, city, and state are required) before starting a scan.
+            Complete your <a href="/profile" className="underline font-medium">profile</a> (name, phone, email, city, and state are required) before submitting removals.
           </div>
         )}
 
@@ -140,7 +142,7 @@ export default function DashboardPage() {
         {showBrokerSelect && (
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Select Sites to Scan</h2>
+              <h2 className="text-lg font-semibold">Select Sites for Opt-Out</h2>
               <div className="flex gap-2 text-xs">
                 <button onClick={selectAll} className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline">
                   Select active
@@ -191,56 +193,55 @@ export default function DashboardPage() {
                 <Button size="sm" variant="ghost" onClick={() => setShowBrokerSelect(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={startScan} disabled={creating || selectedBrokers.size === 0}>
-                  {creating ? "Starting..." : "Start Scan"}
+                <Button size="sm" onClick={startRemovals} disabled={creating || selectedBrokers.size === 0}>
+                  {creating ? "Starting..." : "Start Opt-Out"}
                 </Button>
               </div>
             </div>
           </Card>
         )}
 
-        {/* Removal status summary */}
-        {removalSummary && removalSummary.total > 0 && (
-          <button
-            onClick={() => router.push("/removals")}
-            className="w-full text-left"
-          >
-            <Card className="hover:bg-[var(--accent)] transition-colors">
-              <h2 className="text-lg font-semibold mb-3">Removal Status</h2>
-              <div className="flex items-center gap-6 text-sm">
-                <span className="text-emerald-400 font-medium">{removalSummary.confirmed} confirmed</span>
-                <span className="text-amber-400 font-medium">{removalSummary.pending} pending</span>
-                <span className="text-red-400 font-medium">{removalSummary.failed} failed</span>
-              </div>
-            </Card>
-          </button>
+        {/* Removal summary */}
+        {hasActivity && (
+          <Card>
+            <h2 className="text-lg font-semibold mb-3">Removal Status</h2>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              {summary.confirmed > 0 && <span className="text-emerald-400 font-medium">{summary.confirmed} confirmed</span>}
+              {summary.submitted > 0 && <span className="text-blue-400 font-medium">{summary.submitted} submitted</span>}
+              {summary.needs_verification > 0 && <span className="text-amber-400 font-medium">{summary.needs_verification} needs verification</span>}
+              {summary.in_progress > 0 && <span className="text-amber-400 font-medium">{summary.in_progress} in progress</span>}
+              {summary.pending > 0 && <span className="text-[var(--muted-foreground)] font-medium">{summary.pending} pending</span>}
+              {summary.failed > 0 && <span className="text-red-400 font-medium">{summary.failed} failed</span>}
+            </div>
+          </Card>
         )}
 
+        {/* Past batches */}
         <Card>
-          <h2 className="text-lg font-semibold mb-4">Past Scans</h2>
-          {scanList.length === 0 ? (
+          <h2 className="text-lg font-semibold mb-4">Removal History</h2>
+          {batches.length === 0 ? (
             <p className="text-sm text-[var(--muted-foreground)]">
-              No scans yet. Start one to find your data on broker sites.
+              No removal requests yet. Select broker sites above to submit opt-out requests.
             </p>
           ) : (
             <div className="space-y-2">
-              {scanList.map((scan) => (
+              {batches.map((batch) => (
                 <button
-                  key={scan.id}
-                  onClick={() => router.push(`/scan/${scan.id}`)}
+                  key={batch.id}
+                  onClick={() => router.push(`/removals/${batch.id}`)}
                   className="w-full text-left rounded-md border border-[var(--border)] p-4 hover:bg-[var(--accent)] transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-mono text-[var(--muted-foreground)]">
-                      {new Date(scan.created_at).toLocaleString()}
+                      {new Date(batch.created_at).toLocaleString()}
                     </div>
-                    {statusBadge(scan.status)}
+                    {statusBadge(batch.status)}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {scan.brokers_targeted.map((slug) => {
+                    {batch.brokers_targeted.map((slug) => {
                       const info = BROKER_MAP[slug] || { name: slug, url: slug };
-                      const completed = scan.brokers_completed.includes(slug);
-                      const failed = scan.brokers_failed.includes(slug);
+                      const completed = batch.brokers_completed.includes(slug);
+                      const failed = batch.brokers_failed.includes(slug);
                       return (
                         <span
                           key={slug}
@@ -259,7 +260,7 @@ export default function DashboardPage() {
                     })}
                   </div>
                   <div className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    {scan.listings_found} listings found
+                    {batch.total_removals} removal{batch.total_removals !== 1 ? "s" : ""}
                   </div>
                 </button>
               ))}
