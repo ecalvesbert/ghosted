@@ -58,7 +58,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {type(exc).__name__}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": f"{type(exc).__name__}: {exc}", "code": "INTERNAL_ERROR"},
+        content={"detail": "Internal server error", "code": "INTERNAL_ERROR"},
     )
 
 
